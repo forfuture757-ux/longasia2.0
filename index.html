@@ -108,7 +108,10 @@
             users: "M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm14 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75",
             user: "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z",
             copy: "M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z",
-            check: "M5 13l4 4L19 7"
+            check: "M5 13l4 4L19 7",
+            circleMinus: "M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z",
+            circlePlus: "M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z",
+            crown: "M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z M5 20h14"
         };
 
         // Mock User Data
@@ -150,6 +153,30 @@
             }
         ];
 
+        // Mock Network Tree Data (Linear Logic)
+        const networkTreeData = {
+            name: "Alexander Pierce", id: "36145448", rank: "MIB", email: "alexander.p@gmail.com", level: 0,
+            children: [
+                {
+                    name: "Jashandeep Singh", id: "36145467", rank: "IB", level: 1, email: null,
+                    children: [
+                        { name: "Jashandeep Singh", id: "36145949", rank: "IB", level: 2, email: null, children: [] },
+                        { name: "Jashandeep Singh", id: "36145960", rank: "IB", level: 2, email: null, children: [] }
+                    ]
+                },
+                { name: "Sonit Bais", id: "36145477", rank: "IB", level: 1, email: null, children: [] },
+                { name: "Abhijeet Ananda Mane", id: "36146041", rank: "IB", level: 1, email: null, children: [] },
+                {
+                    name: "Pooja K. (Main)", id: "36146055", rank: "IB", level: 1, email: null,
+                    children: [
+                        { name: "Pooja K. (Acc 2)", id: "36146088", rank: "IB", level: 2, email: null, children: [] },
+                        { name: "Pooja K. (Acc 3)", id: "36146099", rank: "IB", level: 2, email: null, children: [] },
+                        { name: "Vivek S.", id: "36146112", rank: "MEMBER", level: 2, email: null, children: [] }
+                    ]
+                }
+            ]
+        };
+
         // Mock Transactions
         const transactions = [
             { id: "TX9921", type: "IB Commission", amount: "+$42.00", date: "Today, 14:32", status: "Completed", color: "text-green-400" },
@@ -175,6 +202,67 @@
                 {subtitle && <p className="text-xs text-neutral-400 mt-2 font-light">{subtitle}</p>}
             </div>
         );
+
+        const TreeNode = ({ node, expandSignal }) => {
+            const [expanded, setExpanded] = useState(expandSignal);
+            const hasChildren = node.children && node.children.length > 0;
+
+            useEffect(() => {
+                setExpanded(expandSignal);
+            }, [expandSignal]);
+
+            // Level Colors based on the logic requested
+            const getLevelColor = (level) => {
+                if(level === 0) return 'bg-red-500/20 border-red-500/30 text-red-400';
+                if(level === 1) return 'bg-amber-500/20 border-amber-500/30 text-amber-400';
+                if(level === 2) return 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400';
+                return 'bg-white/10 border-white/20 text-neutral-300';
+            };
+
+            return (
+                <div className="flex flex-col min-w-max">
+                    <div className="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-white/5 transition-colors group relative">
+                        
+                        {/* Hierarchy Toggle & Line */}
+                        <div className="flex items-center w-5 justify-center shrink-0">
+                            {hasChildren ? (
+                                <button 
+                                    onClick={() => setExpanded(!expanded)} 
+                                    className="w-3.5 h-3.5 flex items-center justify-center border border-neutral-600 rounded-[3px] text-[10px] text-neutral-400 hover:text-white hover:border-white z-10 bg-[#050505] transition-colors font-mono"
+                                >
+                                    {expanded ? '−' : '+'}
+                                </button>
+                            ) : (
+                                <div className="w-1.5 h-px bg-neutral-700"></div>
+                            )}
+                        </div>
+
+                        {/* Level Indicator */}
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center text-[9px] font-bold shrink-0 ${getLevelColor(node.level)}`}>
+                            {node.level}
+                        </div>
+
+                        {/* Node Data Content */}
+                        <div className="flex items-center gap-1.5 text-xs sm:text-sm font-mono whitespace-nowrap text-neutral-400">
+                            <span className="text-white font-medium">{node.name}</span>
+                            <span>{'<ID: ' + node.id + '>'}</span>
+                            <span>{'<Rank: ' + node.rank + '>'}</span>
+                            {node.email && <span>{'<' + node.email + '>'}</span>}
+                            <Icon path={paths.info} className="w-3.5 h-3.5 text-blue-500/70 cursor-pointer ml-1 hover:text-blue-400 transition-colors" />
+                        </div>
+                    </div>
+
+                    {/* Children Container with Dashed Line */}
+                    {hasChildren && expanded && (
+                        <div className="ml-[18px] pl-3 border-l border-dashed border-neutral-700/60 mt-0.5 space-y-0.5">
+                            {node.children.map((child, idx) => (
+                                <TreeNode key={idx} node={child} expandSignal={expandSignal} />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
 
         const GrowthTracker = () => {
             const [progress, setProgress] = useState(0);
@@ -261,7 +349,6 @@
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="border-b border-white/5 text-[10px] uppercase tracking-widest text-neutral-500 bg-black/40">
-                                <th className="p-4 font-medium">Transaction ID</th>
                                 <th className="p-4 font-medium">Type</th>
                                 <th className="p-4 font-medium">Date</th>
                                 <th className="p-4 font-medium text-right">Amount</th>
@@ -271,7 +358,6 @@
                         <tbody className="text-xs font-mono text-neutral-300">
                             {transactions.map((tx, i) => (
                                 <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                                    <td className="p-4">{tx.id}</td>
                                     <td className="p-4 font-sans tracking-wide uppercase text-[10px]">{tx.type}</td>
                                     <td className="p-4 text-neutral-500">{tx.date}</td>
                                     <td className={`p-4 text-right font-bold ${tx.color}`}>{tx.amount}</td>
@@ -449,7 +535,7 @@
                             <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between cursor-pointer" onClick={() => setAutoWithdrawal(!autoWithdrawal)}>
                                 <div>
                                     <p className="text-xs font-bold text-white tracking-widest uppercase">Auto-Withdrawal Option</p>
-                                    <p className="text-[10px] text-neutral-500 mt-1">Automatically process 10% daily to this address</p>
+                                    <p className="text-[10px] text-neutral-500 mt-1">Automatically process 10% monthly to this address</p>
                                 </div>
                                 <button 
                                     className={`w-12 h-6 rounded-full transition-colors relative ${autoWithdrawal ? 'bg-blue-500' : 'bg-neutral-600'}`}
@@ -484,6 +570,9 @@
 
         const NetworkView = () => {
             const [copied, setCopied] = useState(false);
+            const [showTreeModal, setShowTreeModal] = useState(false);
+            const [expandAllSignal, setExpandAllSignal] = useState(true);
+            const [selectedTier, setSelectedTier] = useState(null); // New state for tier interaction
             const refLink = `https://longasiagroups.com/join/${userData.id}`;
             
             const handleCopy = () => {
@@ -492,8 +581,61 @@
                 setTimeout(() => setCopied(false), 2000);
             };
 
+            const mockLakes = [
+                { name: "Jashandeep Singh", id: "36145467", accounts: 12, volume: "$15,400", rank: "IB" },
+                { name: "Sonit Bais", id: "36145477", accounts: 4, volume: "$3,200", rank: "IB" },
+                { name: "Abhijeet Ananda Mane", id: "36146041", accounts: 1, volume: "$500", rank: "IB" },
+                { name: "Pooja K.", id: "36146055", accounts: 169, volume: "$405,900", rank: "IB" }
+            ];
+
+            // Diagram Configurations for each Tier
+            const tierConfig = {
+                SILVER: { bg: 'bg-slate-500/5', border: 'border-slate-500/30', text: 'text-slate-400', line: 'border-slate-500/50', reqs: ['20K', '20K', '10K'] },
+                GOLD: { bg: 'bg-amber-500/5', border: 'border-amber-500/30', text: 'text-amber-400', line: 'border-amber-500/50', reqs: ['100K', '100K', '50K'] },
+                DIAMOND: { bg: 'bg-cyan-500/5', border: 'border-cyan-500/30', text: 'text-cyan-400', line: 'border-cyan-500/50', reqs: ['750K', '750K', '500K'] }
+            };
+
             return (
                 <div className="animate-fade-in-content space-y-6">
+                    {/* Tree Diagram Modal */}
+                    {showTreeModal && (
+                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-8 bg-black/90 backdrop-blur-md animate-fade-in-content">
+                            <div className="bg-[#050505] border border-white/20 rounded-3xl w-full max-w-3xl max-h-[85vh] shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-pop-in flex flex-col relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-amber-500/50 to-transparent"></div>
+                                
+                                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
+                                    <div className="flex items-center gap-3">
+                                        <Icon path={paths.users} className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" />
+                                        <h3 className="text-xs sm:text-sm tracking-[0.2em] uppercase font-bold text-white">Network Hierarchy Diagram</h3>
+                                    </div>
+                                    <button onClick={() => setShowTreeModal(false)} className="text-neutral-500 hover:text-white transition-colors p-2 bg-white/5 rounded-full border border-white/10 hover:border-white/30">
+                                        <Icon path={paths.close} className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    </button>
+                                </div>
+                                
+                                {/* Tree Toolbar */}
+                                <div className="px-6 py-3 border-b border-white/5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 bg-black/40 shrink-0">
+                                    <button 
+                                        onClick={() => setExpandAllSignal(!expandAllSignal)} 
+                                        className="flex items-center gap-1.5 text-[11px] uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors font-bold"
+                                    >
+                                        <Icon path={expandAllSignal ? paths.circleMinus : paths.circlePlus} className="w-4 h-4" />
+                                        {expandAllSignal ? 'Collapse All' : 'Expand All'}
+                                    </button>
+                                    <span className="text-[10px] text-neutral-500 font-mono tracking-wider">
+                                        Last updated on: {new Date().toISOString().slice(0,10)} 04:03
+                                    </span>
+                                </div>
+
+                                <div className="p-4 sm:p-6 overflow-auto flex-1" data-lenis-prevent>
+                                    <div className="min-w-[500px] max-w-full pb-8">
+                                        <TreeNode node={networkTreeData} expandSignal={expandAllSignal} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Referral Link Card */}
                         <div className="lg:col-span-2 bg-[#050505] border border-white/10 rounded-3xl p-8 shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col justify-center relative overflow-hidden group">
@@ -535,6 +677,154 @@
                             <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 mb-1">Total Team Volume</p>
                             <h3 className="text-2xl font-bold text-white tracking-wider">$425K</h3>
                         </div>
+                    </div>
+
+                    {/* Referral Tree Block */}
+                    <div 
+                        onClick={() => setShowTreeModal(true)}
+                        className="bg-[#050505] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col sm:flex-row items-start sm:items-center justify-between group hover:border-blue-500/50 hover:bg-blue-500/5 transition-all cursor-pointer relative overflow-hidden mt-8"
+                    >
+                        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div className="flex items-center gap-4 sm:gap-6 mb-4 sm:mb-0">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/30 group-hover:bg-blue-500/20 transition-colors shrink-0">
+                                <Icon path={paths.users} className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg sm:text-xl font-bold text-white tracking-widest uppercase mb-1 group-hover:text-blue-400 transition-colors">Referral Tree</h3>
+                                <p className="text-xs text-neutral-400 tracking-wide">View your complete downline hierarchy and network structure</p>
+                            </div>
+                        </div>
+                        <button className="w-full sm:w-auto px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-xs uppercase tracking-widest text-white font-bold group-hover:bg-white group-hover:text-black transition-all">
+                            Open Tree Diagram
+                        </button>
+                    </div>
+
+                    {/* Lakes Block */}
+                    <div className="pt-6">
+                        <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
+                            <div className="w-2 h-6 bg-blue-500 rounded-full"></div>
+                            <h3 className="text-sm sm:text-base tracking-[0.2em] uppercase font-bold text-white">Your Lakes <span className="text-neutral-500 font-light text-[10px] sm:text-xs ml-2">(Direct Downlines)</span></h3>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                            {mockLakes.map((lake, i) => (
+                                <div key={i} className="bg-[#050505] border border-white/10 p-5 sm:p-6 rounded-2xl relative overflow-hidden group hover:border-white/30 transition-all shadow-[0_0_20px_rgba(0,0,0,0.4)]">
+                                    <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
+                                    
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-xs font-bold text-white border border-white/10 shrink-0">
+                                            {lake.name.charAt(0)}
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <p className="text-xs font-bold text-white truncate">{lake.name}</p>
+                                            <p className="text-[9px] text-neutral-500 font-mono mt-0.5">ID: {lake.id} • {lake.rank}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-3 mt-4 border-t border-white/5 pt-4">
+                                        <div className="flex justify-between items-end">
+                                            <span className="text-[9px] uppercase tracking-widest text-neutral-500">Total Volume</span>
+                                            <span className="text-xs font-mono font-bold text-green-400">{lake.volume}</span>
+                                        </div>
+                                        <div className="flex justify-between items-end">
+                                            <span className="text-[9px] uppercase tracking-widest text-neutral-500">Total Accounts</span>
+                                            <span className="text-xs font-mono font-bold text-white">{lake.accounts}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Partnership Tiers Section */}
+                    <div className="pt-10">
+                        <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
+                            <h3 className="text-sm sm:text-base tracking-[0.2em] uppercase font-bold text-white">Partnership Tiers</h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Silver Tier */}
+                            <div 
+                                onClick={() => setSelectedTier(selectedTier === 'SILVER' ? null : 'SILVER')} 
+                                className={`bg-slate-500/5 border ${selectedTier === 'SILVER' ? 'border-slate-500/60 shadow-[0_0_30px_rgba(100,116,139,0.2)]' : 'border-slate-500/20'} rounded-2xl p-8 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:border-slate-500/60 transition-all shadow-[0_0_20px_rgba(0,0,0,0.4)] cursor-pointer`}
+                            >
+                                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <Icon path={paths.crown} className="w-10 h-10 mb-4 text-slate-400 group-hover:text-slate-300 transition-colors" />
+                                <h4 className="text-2xl font-light tracking-widest text-slate-300 mb-5">SILVER</h4>
+                                <div className="w-16 h-px bg-slate-500/30 mb-5"></div>
+                                <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-1.5">Requirement</p>
+                                <p className="text-base font-bold text-slate-300 tracking-wider">$50K Team Vol</p>
+                                <p className="text-[9px] uppercase tracking-widest text-slate-500/50 mt-4 group-hover:text-slate-400 transition-colors">Click to view breakdown</p>
+                            </div>
+
+                            {/* Gold Tier (Active) */}
+                            <div 
+                                onClick={() => setSelectedTier(selectedTier === 'GOLD' ? null : 'GOLD')} 
+                                className={`bg-amber-500/10 border ${selectedTier === 'GOLD' ? 'border-amber-400 shadow-[0_0_40px_rgba(245,158,11,0.3)]' : 'border-amber-500/40 shadow-[0_0_40px_rgba(245,158,11,0.15)]'} rounded-2xl p-8 flex flex-col items-center justify-center text-center relative overflow-hidden cursor-pointer hover:border-amber-400 transition-all group`}
+                            >
+                                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-amber-400/50 to-transparent"></div>
+                                <div className="absolute top-4 right-4 px-2.5 py-1 bg-white text-black text-[9px] font-bold uppercase tracking-widest rounded shadow-[0_0_10px_rgba(255,255,255,0.3)]">Active</div>
+                                <Icon path={paths.crown} className="w-10 h-10 mb-4 text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                                <h4 className="text-2xl font-light tracking-widest text-amber-400 mb-5">GOLD</h4>
+                                <div className="w-16 h-px bg-amber-500/30 mb-5"></div>
+                                <p className="text-[10px] uppercase tracking-widest text-amber-500/70 mb-1.5">Requirement</p>
+                                <p className="text-base font-bold text-amber-400 tracking-wider">$250K Team Vol</p>
+                                <p className="text-[9px] uppercase tracking-widest text-amber-500/50 mt-4 group-hover:text-amber-400 transition-colors">Click to view breakdown</p>
+                            </div>
+
+                            {/* Diamond Tier */}
+                            <div 
+                                onClick={() => setSelectedTier(selectedTier === 'DIAMOND' ? null : 'DIAMOND')} 
+                                className={`bg-cyan-500/5 border ${selectedTier === 'DIAMOND' ? 'border-cyan-500/60 shadow-[0_0_30px_rgba(6,182,212,0.2)]' : 'border-cyan-500/20'} rounded-2xl p-8 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(0,0,0,0.4)] cursor-pointer`}
+                            >
+                                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <Icon path={paths.crown} className="w-10 h-10 mb-4 text-cyan-500/70 group-hover:text-cyan-400 transition-colors" />
+                                <h4 className="text-2xl font-light tracking-widest text-cyan-400 mb-5">DIAMOND</h4>
+                                <div className="w-16 h-px bg-cyan-500/30 mb-5"></div>
+                                <p className="text-[10px] uppercase tracking-widest text-cyan-600 mb-1.5">Requirement</p>
+                                <p className="text-base font-bold text-cyan-400 tracking-wider">$2M Team Vol</p>
+                                <p className="text-[9px] uppercase tracking-widest text-cyan-600/50 mt-4 group-hover:text-cyan-400 transition-colors">Click to view breakdown</p>
+                            </div>
+                        </div>
+
+                        {/* Expanded Breakdown Diagram */}
+                        {selectedTier && (
+                            <div className={`mt-6 p-8 rounded-3xl border ${tierConfig[selectedTier].bg} ${tierConfig[selectedTier].border} animate-pop-in relative overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]`}>
+                                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                                
+                                <div className="text-center mb-10">
+                                    <h4 className={`text-xl font-bold tracking-widest uppercase ${tierConfig[selectedTier].text}`}>How to achieve {selectedTier}</h4>
+                                    <p className="text-xs text-neutral-400 mt-2">Distribute your team volume across 3 separate direct lakes (legs). You do not need downlines with specific ranks.</p>
+                                </div>
+                                
+                                <div className="flex flex-col items-center">
+                                    {/* Main Node */}
+                                    <div className={`px-8 py-3 rounded-xl border ${tierConfig[selectedTier].line} bg-[#050505] ${tierConfig[selectedTier].text} font-bold tracking-widest shadow-[0_0_20px_rgba(0,0,0,0.8)] z-10 flex items-center gap-2`}>
+                                        <Icon path={paths.user} className="w-4 h-4" />
+                                        YOU ({selectedTier})
+                                    </div>
+                                    
+                                    {/* Vertical Line */}
+                                    <div className={`w-px h-8 ${tierConfig[selectedTier].line} border-l`}></div>
+                                    
+                                    {/* Horizontal Line connecting the lakes */}
+                                    <div className={`w-full max-w-[80%] sm:max-w-md h-px ${tierConfig[selectedTier].line} border-t relative`}>
+                                        <div className={`absolute left-0 top-0 w-px h-6 ${tierConfig[selectedTier].line} border-l`}></div>
+                                        <div className={`absolute left-1/2 top-0 w-px h-6 ${tierConfig[selectedTier].line} border-l -translate-x-1/2`}></div>
+                                        <div className={`absolute right-0 top-0 w-px h-6 ${tierConfig[selectedTier].line} border-l`}></div>
+                                    </div>
+                                    
+                                    {/* Lakes */}
+                                    <div className="flex justify-between w-full max-w-[90%] sm:max-w-lg mt-6 gap-3 sm:gap-6">
+                                        {tierConfig[selectedTier].reqs.map((req, idx) => (
+                                            <div key={idx} className="flex-1 bg-black/60 border border-white/10 rounded-xl p-4 text-center hover:bg-white/5 transition-colors shadow-inner">
+                                                <p className="text-[10px] uppercase tracking-widest text-neutral-500 mb-2">Lake {idx + 1}</p>
+                                                <p className={`text-sm sm:text-xl font-bold font-mono ${tierConfig[selectedTier].text}`}>${req}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
@@ -730,12 +1020,30 @@
                     easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), 
                     smoothWheel: true,
                 });
+                
                 function raf(time) {
                     lenis.raf(time);
                     requestAnimationFrame(raf);
                 }
                 requestAnimationFrame(raf);
-                return () => lenis.destroy();
+
+                // FIX: Observe body size changes to dynamically update scroll limits
+                const resizeObserver = new ResizeObserver(() => {
+                    lenis.resize();
+                });
+                
+                // Watch the main root element for height changes
+                const rootElement = document.getElementById('root');
+                if (rootElement) {
+                    resizeObserver.observe(rootElement);
+                } else {
+                    resizeObserver.observe(document.body);
+                }
+
+                return () => {
+                    resizeObserver.disconnect();
+                    lenis.destroy();
+                };
             }, []);
 
             const changeLang = (lang) => {
