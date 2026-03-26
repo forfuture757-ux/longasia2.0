@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Long Asia | Client Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Premium Butter Smooth Scrolling Engine (Lenis) -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+
+    <!-- Google Translate Script -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,hi,mr,ta,te',
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    
+    <style>
+        /* Smooth scrolling styles for Lenis */
+        html.lenis { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+        .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+        .lenis.lenis-stopped { overflow: hidden; }
+        .lenis.lenis-scrolling iframe { pointer-events: none; }
+        
+        /* Hide Google Translate UI elements completely to maintain premium look */
+        body { top: 0 !important; position: static !important; }
+        .skiptranslate iframe, .goog-te-banner-frame { display: none !important; }
+        #goog-gt-tt, .goog-te-spinner-pos { display: none !important; }
+        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
+        #google_translate_element { display: none !important; }
+        
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); filter: blur(4px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes fadeInContent {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes marquee {
+            0% { transform: translateX(100vw); }
+            100% { transform: translateX(-100%); }
+        }
+        .animate-fade-up { animation: fadeUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        .animate-pop-in { animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-fade-in-content { animation: fadeInContent 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-marquee { animation: marquee 35s linear infinite; display: inline-flex; white-space: nowrap; }
+        
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+        .delay-500 { animation-delay: 500ms; }
+        .delay-600 { animation-delay: 600ms; }
+        body { background-color: black; margin: 0; overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+</head>
+<body>
+    <div id="google_translate_element"></div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Base Icon Component
+        const Icon = ({ path, viewBox="0 0 24 24", className="w-6 h-6" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox={viewBox} xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={path}></path>
+            </svg>
+        );
+
+        // SVG Paths & Complex Icons
+        const ChatIcon = ({className="w-6 h-6"}) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2z"></path><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"></path></svg>
+        );
+        const GlobeIcon = ({className="w-6 h-6"}) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+        );
+        const BellIcon = ({className="w-6 h-6"}) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        );
+
+        const paths = {
+            menu: "M4 6h16M4 12h16M4 18h16",
+            close: "M6 18L18 6M6 6l12 12",
+            wallet: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+            calendar: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
+            arrowUp: "M5 10l7-7m0 0l7 7m-7-7v18",
+            arrowDown: "M19 14l-7 7m0 0l-7-7m7 7V3",
+            users: "M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm14 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75",
+            user: "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z",
+            copy: "M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z",
+            check: "M5 13l4 4L19 7"
+        };
+
+        // Mock User Data
+        const userData = {
+            name: "Alexander Pierce",
+            id: "LA-984321",
+            rank: "GOLD",
+            balance: 1450.50,
+            activeInvestment: 1000.00,
+            totalIbCommission: 3420.75,
+            todayIbCommission: 124.50,
+            joinDate: "Aug 14, 2025",
+            walletAddr: "TY8RxM...9pWq2Z",
+            kyc: "Verified"
+        };
+
+        // Mock Transactions
+        const transactions = [
+            { id: "TX9921", type: "IB Commission", amount: "+$42.00", date: "Today, 14:32", status: "Completed", color: "text-green-400" },
+            { id: "TX9920", type: "IB Commission", amount: "+$82.50", date: "Today, 09:15", status: "Completed", color: "text-green-400" },
+            { id: "TX9874", type: "Withdrawal", amount: "-$500.00", date: "Yesterday", status: "Processing", color: "text-neutral-300" },
+            { id: "TX9812", type: "Daily ROI", amount: "+$14.50", date: "Yesterday", status: "Completed", color: "text-blue-400" },
+            { id: "TX9750", type: "Deposit", amount: "+$1000.00", date: "Oct 12, 2025", status: "Completed", color: "text-white" },
+        ];
+
+        // --- COMPONENTS ---
+
+        const StatCard = ({ title, value, subtitle, icon, highlight }) => (
+            <div className="bg-[#050505] border border-white/10 p-6 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                <div className="flex justify-between items-start mb-4">
+                    <div className="p-2 bg-white/5 rounded-lg border border-white/10 text-neutral-400 group-hover:text-white transition-colors">
+                        <Icon path={icon} className="w-5 h-5" />
+                    </div>
+                    {highlight && <span className="px-2 py-1 bg-green-500/10 text-green-400 text-[9px] uppercase tracking-widest rounded border border-green-500/20">{highlight}</span>}
+                </div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 mb-1">{title}</p>
+                <h3 className="text-2xl sm:text-3xl font-bold text-white tracking-wider">{value}</h3>
+                {subtitle && <p className="text-xs text-neutral-400 mt-2 font-light">{subtitle}</p>}
+            </div>
+        );
+
+        const GrowthTracker = () => {
+            const [progress, setProgress] = useState(0);
+            const targetAmount = 2000;
+            const expectedDate = "November 2026";
+            const percentage = Math.min((userData.balance / targetAmount) * 100, 100);
+
+            useEffect(() => {
+                const timer = setTimeout(() => setProgress(percentage), 600);
+                return () => clearTimeout(timer);
+            }, [percentage]);
+
+            return (
+                <div className="w-full mt-8 p-6 sm:p-10 bg-[#050505] border border-white/10 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-50"></div>
+                    
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+                        <div className="text-left space-y-3">
+                            <div className="flex items-center gap-2">
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                                </span>
+                                <p className="text-[10px] uppercase tracking-[0.2em] text-blue-400 font-bold">Active Investment Cycle</p>
+                            </div>
+                            <h3 className="text-3xl sm:text-4xl lg:text-5xl font-light text-white tracking-widest uppercase">
+                                Guaranteed <span className="font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-neutral-400">2X Growth</span>
+                            </h3>
+                        </div>
+                        
+                        <div className="text-left md:text-right w-full md:w-auto p-4 bg-white/5 rounded-xl border border-white/5 shadow-inner">
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 mb-1">Estimated Current Value</p>
+                            <div className="flex items-baseline md:justify-end gap-1">
+                                <h3 className="text-3xl sm:text-4xl font-bold text-white tracking-wider">${userData.balance.toLocaleString('en-US', {minimumFractionDigits: 2})}</h3>
+                                <span className="text-sm font-medium text-neutral-500 mb-1">/ $2,000</span>
+                            </div>
+                            <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded text-emerald-400 text-[9px] uppercase tracking-[0.15em] font-medium">
+                                <Icon path={paths.calendar} className="w-3 h-3" />
+                                Expected Double Date: {expectedDate}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="relative pt-2 pb-8">
+                        <div className="absolute top-3 left-0 h-2 w-full bg-blue-500/20 blur-md rounded-full"></div>
+                        <div className="relative h-2 w-full bg-neutral-900 rounded-full overflow-hidden border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]">
+                            <div 
+                                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-900 via-blue-500 to-cyan-300 transition-all duration-[2000ms] ease-out flex items-center justify-end"
+                                style={{ width: `${progress}%` }}
+                            >
+                                <div className="absolute right-0 w-2 h-4 bg-white shadow-[0_0_15px_rgba(255,255,255,1)] rounded-full blur-[1px]"></div>
+                            </div>
+                        </div>
+
+                        <div className="absolute top-6 left-0 w-full flex justify-between text-[10px] sm:text-xs font-mono tracking-wider">
+                            <div className="flex flex-col items-start w-1/3">
+                                <div className="w-0.5 h-2 bg-neutral-700 mb-2 -mt-6"></div>
+                                <span className="text-white font-medium">$1,000</span>
+                                <span className="text-[8px] text-neutral-500 uppercase mt-0.5">Start</span>
+                            </div>
+                            <div className="flex flex-col items-center w-1/3">
+                                <div className="w-0.5 h-2 bg-neutral-700 mb-2 -mt-6"></div>
+                                <span className="text-neutral-300">$1,500</span>
+                                <span className="text-[8px] text-neutral-500 uppercase mt-0.5">1.5X Mark</span>
+                            </div>
+                            <div className="flex flex-col items-end w-1/3">
+                                <div className="w-0.5 h-2 bg-neutral-700 mb-2 -mt-6"></div>
+                                <span className="text-cyan-400 font-bold">$2,000</span>
+                                <span className="text-[8px] text-cyan-500/70 uppercase mt-0.5 flex items-center gap-1">Auto-Withdrawal</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const TransactionTable = () => (
+            <div className="mt-8 bg-[#050505] border border-white/10 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+                    <h3 className="text-sm tracking-[0.2em] uppercase font-bold text-white">Recent Activity</h3>
+                    <button className="text-[10px] uppercase tracking-widest text-neutral-400 hover:text-white transition-colors">View All</button>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-white/5 text-[10px] uppercase tracking-widest text-neutral-500 bg-black/40">
+                                <th className="p-4 font-medium">Transaction ID</th>
+                                <th className="p-4 font-medium">Type</th>
+                                <th className="p-4 font-medium">Date</th>
+                                <th className="p-4 font-medium text-right">Amount</th>
+                                <th className="p-4 font-medium text-right">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody className="text-xs font-mono text-neutral-300">
+                            {transactions.map((tx, i) => (
+                                <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                    <td className="p-4">{tx.id}</td>
+                                    <td className="p-4 font-sans tracking-wide uppercase text-[10px]">{tx.type}</td>
+                                    <td className="p-4 text-neutral-500">{tx.date}</td>
+                                    <td className={`p-4 text-right font-bold ${tx.color}`}>{tx.amount}</td>
+                                    <td className="p-4 text-right">
+                                        <span className={`px-2 py-1 rounded text-[9px] uppercase tracking-widest ${tx.status === 'Completed' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-neutral-500/10 text-neutral-400 border border-neutral-500/20'}`}>
+                                            {tx.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
+
+        // --- VIEWS ---
+
+        const DashboardView = () => (
+            <div className="animate-fade-in-content">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                    <StatCard title="Total Balance" value={`$${userData.balance.toLocaleString('en-US', {minimumFractionDigits: 2})}`} icon={paths.wallet} />
+                    <StatCard title="Active Investment" value={`$${userData.activeInvestment.toLocaleString('en-US', {minimumFractionDigits: 2})}`} icon={paths.arrowUp} subtitle="In Quantitative Engine" />
+                    <StatCard title="Today's IB Comm." value={`$${userData.todayIbCommission.toLocaleString('en-US', {minimumFractionDigits: 2})}`} icon={paths.users} highlight="+14.2%" />
+                    <StatCard title="Total Earnings" value={`$${userData.totalIbCommission.toLocaleString('en-US', {minimumFractionDigits: 2})}`} icon={paths.calendar} />
+                </div>
+                <GrowthTracker />
+                <TransactionTable />
+            </div>
+        );
+
+        const DepositView = () => {
+            const [copied, setCopied] = useState(false);
+            const address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"; // Dummy Tether TRC20 address
+            
+            const handleCopy = () => {
+                navigator.clipboard.writeText(address);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            };
+
+            return (
+                <div className="max-w-2xl mx-auto animate-fade-in-content">
+                    <div className="bg-[#050505] border border-white/10 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                        <div className="p-8 border-b border-white/10 bg-white/5">
+                            <h2 className="text-xl sm:text-2xl font-light tracking-widest uppercase text-white mb-2">Deposit Funds</h2>
+                            <p className="text-xs text-neutral-400 uppercase tracking-widest">Add capital to start or upgrade your cycle</p>
+                        </div>
+                        <div className="p-8 space-y-8">
+                            <div>
+                                <label className="block text-[10px] uppercase tracking-widest text-neutral-500 mb-3">Select Network</label>
+                                <div className="p-4 border border-blue-500/50 bg-blue-500/10 rounded-xl flex justify-between items-center">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs">USDT</div>
+                                        <span className="font-bold tracking-widest">USDT (TRC20)</span>
+                                    </div>
+                                    <span className="text-[10px] uppercase tracking-widest text-blue-400">Selected</span>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col items-center py-6 border border-white/5 rounded-xl bg-black/50">
+                                <div className="w-40 h-40 bg-white p-2 rounded-lg mb-6">
+                                    {/* Mock QR Code using simple CSS grid for visual effect */}
+                                    <div className="w-full h-full bg-black flex flex-wrap gap-1 p-1">
+                                        {[...Array(64)].map((_, i) => <div key={i} className={`w-[12%] h-[12%] ${Math.random() > 0.5 ? 'bg-white' : 'bg-black'}`}></div>)}
+                                    </div>
+                                </div>
+                                <label className="block text-[10px] uppercase tracking-widest text-neutral-500 mb-2">Deposit Address</label>
+                                <div className="flex items-center gap-2 w-full max-w-sm px-4">
+                                    <code className="flex-1 bg-white/5 border border-white/10 p-3 rounded-lg text-xs text-center text-neutral-300 break-all">{address}</code>
+                                    <button onClick={handleCopy} className="p-3 bg-white text-black rounded-lg hover:bg-neutral-200 transition-colors">
+                                        <Icon path={copied ? paths.check : paths.copy} className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-500 text-xs leading-relaxed font-light">
+                                <strong className="font-bold">Important:</strong> Send only USDT to this deposit address. Sending coin or token other than USDT TRC20 to this address may result in the loss of your deposit. Minimum deposit is $100.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const WithdrawView = () => {
+            const [amount, setAmount] = useState('');
+            const fee = amount ? (parseFloat(amount) * 0.02).toFixed(2) : '0.00';
+            const receive = amount ? (parseFloat(amount) - parseFloat(fee)).toFixed(2) : '0.00';
+
+            return (
+                <div className="max-w-2xl mx-auto animate-fade-in-content">
+                    <div className="bg-[#050505] border border-white/10 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                        <div className="p-8 border-b border-white/10 bg-white/5 flex justify-between items-end">
+                            <div>
+                                <h2 className="text-xl sm:text-2xl font-light tracking-widest uppercase text-white mb-2">Withdraw Funds</h2>
+                                <p className="text-xs text-neutral-400 uppercase tracking-widest">Transfer to external wallet</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 mb-1">Available</p>
+                                <p className="text-xl font-bold text-white tracking-wider">${userData.balance.toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                            </div>
+                        </div>
+                        
+                        <div className="p-8 space-y-6">
+                            <div>
+                                <label className="block text-[10px] uppercase tracking-widest text-neutral-500 mb-3">Destination Address (USDT TRC20)</label>
+                                <input type="text" placeholder="Paste TRC20 Address here" className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500/50 transition-colors font-mono" />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-[10px] uppercase tracking-widest text-neutral-500 mb-3 flex justify-between">
+                                    <span>Withdrawal Amount</span>
+                                    <button onClick={() => setAmount(userData.balance.toString())} className="text-blue-400 hover:text-blue-300">MAX</button>
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 font-bold">$</span>
+                                    <input 
+                                        type="number" 
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        placeholder="0.00" 
+                                        className="w-full bg-black/50 border border-white/10 p-4 pl-8 rounded-xl text-lg text-white font-bold tracking-wider focus:outline-none focus:border-blue-500/50 transition-colors" 
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="bg-white/5 border border-white/5 p-4 rounded-xl space-y-3 text-xs tracking-widest uppercase text-neutral-400">
+                                <div className="flex justify-between">
+                                    <span>Network Fee (2%)</span>
+                                    <span className="text-white">${fee}</span>
+                                </div>
+                                <div className="flex justify-between border-t border-white/10 pt-3 text-sm">
+                                    <span className="font-bold text-white">You Will Receive</span>
+                                    <span className="font-bold text-green-400">${receive}</span>
+                                </div>
+                            </div>
+
+                            <button className="w-full py-4 bg-white text-black text-xs font-bold uppercase tracking-[0.2em] hover:bg-neutral-200 transition-all rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                                Submit Withdrawal Request
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const NetworkView = () => {
+            const [copied, setCopied] = useState(false);
+            const refLink = `https://longasiagroups.com/join/${userData.id}`;
+            
+            const handleCopy = () => {
+                navigator.clipboard.writeText(refLink);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            };
+
+            return (
+                <div className="animate-fade-in-content space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Referral Link Card */}
+                        <div className="lg:col-span-2 bg-[#050505] border border-white/10 rounded-3xl p-8 shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col justify-center relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-amber-500/50 to-transparent opacity-50"></div>
+                            <h2 className="text-xl font-light tracking-widest uppercase text-white mb-2">Build Your Network</h2>
+                            <p className="text-xs text-neutral-400 uppercase tracking-widest mb-6 leading-relaxed">Share your unique invite link to earn Introducing Broker (IB) commissions from your downline's trading volume.</p>
+                            
+                            <label className="block text-[10px] uppercase tracking-widest text-neutral-500 mb-3">Your Referral Link</label>
+                            <div className="flex items-center gap-2 w-full">
+                                <code className="flex-1 bg-black/50 border border-white/10 p-4 rounded-xl text-xs text-amber-400 tracking-wide break-all">{refLink}</code>
+                                <button onClick={handleCopy} className="p-4 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl hover:bg-amber-500 hover:text-black transition-all">
+                                    <Icon path={copied ? paths.check : paths.copy} className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Rank Card */}
+                        <div className="bg-gradient-to-br from-amber-500/20 to-black border border-amber-500/30 rounded-3xl p-8 shadow-[0_0_30px_rgba(245,158,11,0.1)] flex flex-col items-center justify-center text-center">
+                            <div className="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-500 flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(245,158,11,0.4)]">
+                                <Icon path={paths.users} className="w-8 h-8 text-amber-400" />
+                            </div>
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-400 mb-1">Current IB Rank</p>
+                            <h3 className="text-3xl font-bold text-amber-400 tracking-widest">{userData.rank}</h3>
+                            <p className="text-[9px] uppercase tracking-widest text-neutral-500 mt-4 border border-white/10 px-3 py-1 rounded-full bg-black/50">Next Rank: Diamond (1.8M Vol)</p>
+                        </div>
+                    </div>
+
+                    {/* Network Stats */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div className="bg-[#050505] border border-white/10 p-6 rounded-2xl">
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 mb-1">Direct Referrals (L1)</p>
+                            <h3 className="text-2xl font-bold text-white tracking-wider">24 <span className="text-sm font-light text-neutral-500 ml-1">Users</span></h3>
+                        </div>
+                        <div className="bg-[#050505] border border-white/10 p-6 rounded-2xl">
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 mb-1">Network Size (Total)</p>
+                            <h3 className="text-2xl font-bold text-white tracking-wider">186 <span className="text-sm font-light text-neutral-500 ml-1">Users</span></h3>
+                        </div>
+                        <div className="bg-[#050505] border border-white/10 p-6 rounded-2xl">
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 mb-1">Total Team Volume</p>
+                            <h3 className="text-2xl font-bold text-white tracking-wider">$425K</h3>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ProfileView = () => (
+            <div className="max-w-3xl mx-auto animate-fade-in-content space-y-6">
+                {/* Profile Header */}
+                <div className="bg-[#050505] border border-white/10 rounded-3xl p-8 flex flex-col sm:flex-row items-center gap-6 relative overflow-hidden group shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                    <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                    <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-3xl font-light text-white">
+                        {userData.name.charAt(0)}
+                    </div>
+                    <div className="text-center sm:text-left flex-1">
+                        <h2 className="text-2xl font-bold tracking-widest uppercase text-white mb-1">{userData.name}</h2>
+                        <p className="text-xs text-neutral-500 font-mono mb-3">ID: {userData.id}</p>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded text-green-400 text-[10px] uppercase tracking-[0.1em] font-bold">
+                            <Icon path={paths.check} className="w-3 h-3" /> KYC {userData.kyc}
+                        </span>
+                    </div>
+                    <div className="text-center sm:text-right border-t sm:border-t-0 sm:border-l border-white/10 pt-4 sm:pt-0 sm:pl-6 w-full sm:w-auto">
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 mb-1">Member Since</p>
+                        <p className="text-sm font-bold text-white tracking-wider uppercase">{userData.joinDate}</p>
+                    </div>
+                </div>
+
+                {/* Details Config */}
+                <div className="bg-[#050505] border border-white/10 rounded-3xl p-8 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                    <h3 className="text-sm tracking-[0.2em] uppercase font-bold text-white mb-6 border-b border-white/10 pb-4">Security & Binding</h3>
+                    
+                    <div className="space-y-6">
+                        <div>
+                            <label className="block text-[10px] uppercase tracking-widest text-neutral-500 mb-2">Registered Email</label>
+                            <div className="bg-black/50 border border-white/5 p-4 rounded-xl text-sm text-neutral-300 font-mono">alexander.p****@gmail.com</div>
+                        </div>
+                        
+                        <div>
+                            <label className="block text-[10px] uppercase tracking-widest text-neutral-500 mb-2">Bound Withdrawal Wallet (TRC20)</label>
+                            <div className="flex items-center justify-between bg-black/50 border border-white/5 p-4 rounded-xl text-sm text-neutral-300 font-mono">
+                                <span>{userData.walletAddr}</span>
+                                <button className="text-[10px] uppercase tracking-widest text-blue-400 hover:text-blue-300 font-bold">Edit</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] uppercase tracking-widest text-neutral-500 mb-2">Two-Factor Authentication (2FA)</label>
+                            <div className="flex items-center justify-between bg-black/50 border border-white/5 p-4 rounded-xl">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></div>
+                                    <span className="text-xs uppercase tracking-widest text-white font-bold">Enabled</span>
+                                </div>
+                                <button className="text-[10px] uppercase tracking-widest text-neutral-400 hover:text-white font-bold">Manage</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // --- MAIN APP ---
+
+        const ChatWidget = ({ isOpen, onClose }) => {
+            const [messages, setMessages] = useState([{ sender: 'bot', text: 'Hello! I am the Long Asia Support AI. How can I assist you today?' }]);
+            const [input, setInput] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const endOfMessagesRef = useRef(null);
+
+            useEffect(() => {
+                if(endOfMessagesRef.current) endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+            }, [messages, isOpen, isLoading]);
+
+            const apiKey = ""; 
+            const model = "gemini-2.5-flash-preview-09-2025";
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+            const systemPrompt = `You are the official Support Bot for Long Asia Wealth Management. Keep all answers short (2-3 sentences max).`;
+
+            const handleSend = async (e) => {
+                e.preventDefault();
+                const userQuery = input.trim();
+                if (!userQuery) return;
+                
+                setMessages(prev => [...prev, { sender: 'user', text: userQuery }]);
+                setInput('');
+                setIsLoading(true);
+
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                };
+
+                const delays = [1000, 2000, 4000, 8000, 16000];
+                let attempt = 0;
+                let botResponse = "High network traffic. Please email support@longasiagroups.com.";
+
+                while (attempt < delays.length + 1) {
+                    try {
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) throw new Error('API Error');
+
+                        const data = await response.json();
+                        botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't process that.";
+                        break; 
+                    } catch (err) {
+                        if (attempt < delays.length) {
+                            await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+                            attempt++;
+                        } else {
+                            break; 
+                        }
+                    }
+                }
+
+                setMessages(prev => [...prev, { sender: 'bot', text: botResponse }]);
+                setIsLoading(false);
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 w-[90vw] sm:w-[380px] bg-black border border-white/20 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.8)] z-[100] flex flex-col overflow-hidden animate-pop-in backdrop-blur-3xl">
+                    <div className="bg-white/5 px-4 py-3 border-b border-white/10 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <ChatIcon className="w-5 h-5 text-white" />
+                            <span className="font-bold text-xs tracking-widest uppercase text-white">Support Bot (AI)</span>
+                        </div>
+                        <button onClick={onClose} className="text-neutral-500 hover:text-white transition-colors">
+                            <Icon path={paths.close} className="w-5 h-5" />
+                        </button>
+                    </div>
+                    
+                    <div className="p-4 h-72 overflow-y-auto flex flex-col gap-4 bg-gradient-to-b from-transparent to-white/5" data-lenis-prevent>
+                        {messages.map((msg, idx) => (
+                            <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`p-3 rounded-lg text-sm max-w-[85%] leading-relaxed ${msg.sender === 'user' ? 'bg-white text-black rounded-tr-none' : 'bg-white/10 text-white rounded-tl-none border border-white/5'}`}>
+                                    {msg.text}
+                                </div>
+                            </div>
+                        ))}
+                        {isLoading && (
+                            <div className="flex justify-start">
+                                <div className="p-3 rounded-lg bg-white/10 text-white rounded-tl-none border border-white/5 flex gap-1 items-center">
+                                    <div className="w-2 h-2 bg-white/50 rounded-full animate-pulse"></div>
+                                    <div className="w-2 h-2 bg-white/50 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                                    <div className="w-2 h-2 bg-white/50 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                                </div>
+                            </div>
+                        )}
+                        <div ref={endOfMessagesRef} />
+                    </div>
+
+                    <form onSubmit={handleSend} className="p-3 border-t border-white/10 flex gap-2 bg-black">
+                        <input 
+                            type="text" 
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder="Ask a question..." 
+                            className="flex-1 bg-white/5 border border-white/20 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-white/50 transition-colors"
+                            disabled={isLoading}
+                        />
+                        <button type="submit" disabled={isLoading} className="bg-white text-black px-4 py-2 text-xs font-bold uppercase tracking-wider rounded hover:bg-neutral-200 transition-colors disabled:opacity-50">
+                            Send
+                        </button>
+                    </form>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'deposit', 'withdraw', 'network', 'profile'
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+            const [chatOpen, setChatOpen] = useState(false);
+            const [langMenuOpen, setLangMenuOpen] = useState(false);
+            const [currentLang, setCurrentLang] = useState('EN');
+
+            // Fake live ticker data
+            const [tickerData, setTickerData] = useState("BTC/USDT 64,230.00 | SYSTEM PAYOUT: $1,450.00 TO 0x...a1b2 | TOTAL TRADES TODAY: 6 | NETWORK STATUS: OPTIMAL");
+
+            useEffect(() => {
+                const lenis = new Lenis({
+                    duration: 1.5, 
+                    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), 
+                    smoothWheel: true,
+                });
+                function raf(time) {
+                    lenis.raf(time);
+                    requestAnimationFrame(raf);
+                }
+                requestAnimationFrame(raf);
+                return () => lenis.destroy();
+            }, []);
+
+            const changeLang = (lang) => {
+                setCurrentLang(lang);
+                setLangMenuOpen(false);
+                setMobileMenuOpen(false);
+                const langMap = { 'EN': 'en', 'HI': 'hi', 'MR': 'mr', 'TA': 'ta', 'TE': 'te' };
+                const code = langMap[lang];
+                const select = document.querySelector('.goog-te-combo');
+                if (select) {
+                    select.value = code;
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            };
+
+            const NavButton = ({ view, label }) => (
+                <button 
+                    onClick={() => { setCurrentView(view); setMobileMenuOpen(false); }} 
+                    className={`text-[10px] md:text-xs tracking-[0.2em] uppercase transition-colors relative whitespace-nowrap ${currentView === view ? 'text-white font-medium' : 'text-neutral-400 hover:text-white font-medium'}`}
+                >
+                    {label}
+                    {currentView === view && <span className="absolute -bottom-2 left-0 w-full h-[2px] bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>}
+                </button>
+            );
+
+            const MobileNavButton = ({ view, label }) => (
+                <button 
+                    onClick={() => { setCurrentView(view); setMobileMenuOpen(false); }} 
+                    className={`text-xl tracking-[0.2em] uppercase transition-colors relative ${currentView === view ? 'text-white font-medium' : 'text-neutral-400 hover:text-white font-medium'}`}
+                >
+                    {label}
+                    {currentView === view && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1/2 h-[2px] bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>}
+                </button>
+            );
+
+            return (
+                <div className="min-h-screen text-white relative">
+                    {/* Grid Background */}
+                    <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:3rem_3rem]"></div>
+                    
+                    {/* Navigation */}
+                    <nav className="fixed w-full z-50 bg-black/50 backdrop-blur-xl border-b border-white/10 px-4 sm:px-8 h-24 md:h-28 flex items-center justify-between">
+                        <a href="#" onClick={() => setCurrentView('dashboard')} className="flex items-center cursor-pointer z-50 shrink-0">
+                            <img src="https://i.ibb.co/kVwvjjrR/long-asia-png.png" className="h-[70px] sm:h-[90px] w-auto object-contain grayscale brightness-0 invert hover:scale-105 transition-all duration-500 notranslate" alt="Long Asia" />
+                        </a>
+
+                        <div className="hidden lg:flex flex-1 justify-center space-x-6 xl:space-x-10 items-center z-10 px-4">
+                            <NavButton view="dashboard" label="Dashboard" />
+                            <NavButton view="deposit" label="Deposit" />
+                            <NavButton view="withdraw" label="Withdraw" />
+                            <NavButton view="network" label="Network (IB)" />
+                            <NavButton view="profile" label="Profile" />
+                        </div>
+
+                        <div className="flex items-center space-x-2 lg:space-x-4 z-50 shrink-0">
+                            <div className="hidden sm:flex flex-col items-end mr-4">
+                                <span className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Welcome back,</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-white">{userData.name}</span>
+                            </div>
+
+                            <div className="relative">
+                                <button onClick={() => setLangMenuOpen(!langMenuOpen)} className="flex items-center gap-1.5 p-2 text-white hover:text-neutral-400 transition-colors rounded-full hover:bg-white/5">
+                                    <GlobeIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                                    <span key={currentLang} className="notranslate text-[10px] font-bold tracking-widest uppercase hidden lg:block">{currentLang}</span>
+                                </button>
+                                {langMenuOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-[100]" onClick={() => setLangMenuOpen(false)}></div>
+                                        <div className="absolute top-full right-0 mt-2 w-32 bg-black border border-white/20 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.8)] z-[110] flex flex-col text-left">
+                                            {['EN', 'HI', 'MR', 'TA', 'TE'].map(lang => (
+                                                <button key={lang} onClick={() => changeLang(lang)} className={`px-4 py-3 text-xs tracking-widest font-bold text-left transition-colors border-b border-white/5 last:border-0 ${currentLang === lang ? 'bg-white text-black' : 'text-neutral-300 hover:bg-white/10 hover:text-white'}`}>
+                                                    <span className="notranslate">{{'EN':'English','HI':'Hindi','MR':'Marathi','TA':'Tamil','TE':'Telugu'}[lang]}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <button onClick={() => setChatOpen(true)} className="p-2 text-white hover:text-neutral-400 transition-colors rounded-full hover:bg-white/5">
+                                <ChatIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                            </button>
+
+                            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 text-white hover:text-neutral-300 transition-colors">
+                                <Icon path={mobileMenuOpen ? paths.close : paths.menu} className="w-6 h-6 sm:w-7 sm:h-7" />
+                            </button>
+                        </div>
+                    </nav>
+
+                    <ChatWidget isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+
+                    {/* Market / Activity Ticker */}
+                    <div className="fixed top-24 md:top-28 left-0 w-full bg-blue-500/5 border-b border-white/5 z-40 backdrop-blur-md overflow-hidden flex items-center py-2">
+                        <div className="animate-marquee items-center gap-12 text-[10px] md:text-xs tracking-[0.3em] uppercase text-white font-mono pl-8">
+                            <span className="flex items-center gap-3">
+                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
+                                {tickerData}
+                            </span>
+                            <span className="flex items-center gap-3">
+                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
+                                {tickerData}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Mobile Menu Overlay */}
+                    <div className={`fixed inset-0 bg-black/95 backdrop-blur-3xl z-40 flex flex-col items-center justify-center space-y-6 transition-all duration-500 lg:hidden ${mobileMenuOpen ? 'opacity-100 pointer-events-auto translate-y-0' : 'opacity-0 pointer-events-none -translate-y-8'}`}>
+                        <MobileNavButton view="dashboard" label="Dashboard" />
+                        <MobileNavButton view="deposit" label="Deposit" />
+                        <MobileNavButton view="withdraw" label="Withdraw" />
+                        <MobileNavButton view="network" label="Network (IB)" />
+                        <MobileNavButton view="profile" label="Profile" />
+                    </div>
+
+                    {/* Dynamic View Content */}
+                    <main className="pt-40 md:pt-48 pb-32 px-4 sm:px-8 max-w-7xl mx-auto relative z-10 min-h-screen">
+                        
+                        {/* Page Header Area (adapts to view) */}
+                        <div className="mb-10 sm:mb-16 animate-fade-up">
+                            {currentView === 'dashboard' && (
+                                <div>
+                                    <h1 className="notranslate text-4xl md:text-5xl font-light uppercase tracking-widest text-white mb-2">
+                                        Portfolio <span className="font-bold [text-shadow:0_0_20px_rgba(255,255,255,0.3)]">Overview</span>
+                                    </h1>
+                                    <p className="text-neutral-500 text-xs sm:text-sm tracking-widest uppercase">Live metrics and quantitative engine status</p>
+                                </div>
+                            )}
+                            {currentView === 'deposit' && (
+                                <div className="text-center">
+                                    <h1 className="notranslate text-4xl md:text-5xl font-light uppercase tracking-widest text-white mb-2">
+                                        Fund <span className="font-bold [text-shadow:0_0_20px_rgba(255,255,255,0.3)]">Account</span>
+                                    </h1>
+                                </div>
+                            )}
+                            {currentView === 'withdraw' && (
+                                <div className="text-center">
+                                    <h1 className="notranslate text-4xl md:text-5xl font-light uppercase tracking-widest text-white mb-2">
+                                        Capital <span className="font-bold [text-shadow:0_0_20px_rgba(255,255,255,0.3)]">Extraction</span>
+                                    </h1>
+                                </div>
+                            )}
+                            {currentView === 'network' && (
+                                <div className="text-center">
+                                    <h1 className="notranslate text-4xl md:text-5xl font-light uppercase tracking-widest text-white mb-2">
+                                        Global <span className="font-bold [text-shadow:0_0_20px_rgba(255,255,255,0.3)]">Network</span>
+                                    </h1>
+                                </div>
+                            )}
+                            {currentView === 'profile' && (
+                                <div className="text-center">
+                                    <h1 className="notranslate text-4xl md:text-5xl font-light uppercase tracking-widest text-white mb-2">
+                                        Account <span className="font-bold [text-shadow:0_0_20px_rgba(255,255,255,0.3)]">Details</span>
+                                    </h1>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Render Active Component */}
+                        {currentView === 'dashboard' && <DashboardView />}
+                        {currentView === 'deposit' && <DepositView />}
+                        {currentView === 'withdraw' && <WithdrawView />}
+                        {currentView === 'network' && <NetworkView />}
+                        {currentView === 'profile' && <ProfileView />}
+
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="border-t border-white/5 py-12 px-4 sm:px-8 flex flex-col md:flex-row items-center justify-between bg-black relative z-10">
+                        <img src="https://i.ibb.co/kVwvjjrR/long-asia-png.png" className="h-16 grayscale brightness-0 invert opacity-40 hover:opacity-100 transition-all duration-500 mb-6 md:mb-0 notranslate" alt="Logo" />
+                        <div className="text-center md:text-left flex-1 md:pl-8">
+                            <p className="text-[10px] tracking-[0.2em] text-neutral-600 uppercase mb-1">© 2026 Long Asia Quantitative Network.</p>
+                            <p className="text-[9px] tracking-widest text-neutral-700 uppercase">Institutional Grade Infrastructure</p>
+                        </div>
+                        <div className="flex space-x-6 text-[10px] font-mono tracking-widest uppercase text-neutral-500 mt-6 md:mt-0">
+                            <a href="#" className="hover:text-white transition-colors">Privacy</a>
+                            <a href="#" className="hover:text-white transition-colors">Terms</a>
+                            <a href="mailto:support@longasiagroups.com" className="hover:text-white transition-colors">Support</a>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
