@@ -359,33 +359,75 @@
 
         const WithdrawView = () => {
             const [amount, setAmount] = useState('');
+            const [network, setNetwork] = useState('TRC20');
+            const [address, setAddress] = useState('');
+            const [autoWithdrawal, setAutoWithdrawal] = useState(false);
+
+            // Calculation logic for maximum allowed withdrawal
+            // Rule 1: Max 10% of total balance
+            const maxByPercentage = userData.balance * 0.10;
+            // Rule 2: Cannot withdraw into the active investment capital (balance must stay >= activeInvestment)
+            const maxByCapital = userData.balance - userData.activeInvestment;
+            // The actual max allowed is the smaller of the two limits, but never below 0
+            const maxAllowed = Math.max(0, Math.min(maxByPercentage, maxByCapital));
+
             const fee = amount ? (parseFloat(amount) * 0.02).toFixed(2) : '0.00';
             const receive = amount ? (parseFloat(amount) - parseFloat(fee)).toFixed(2) : '0.00';
 
+            const networks = ['TRC20', 'ERC20', 'BEP20', 'USDTPRO'];
+
             return (
                 <div className="max-w-2xl mx-auto animate-fade-in-content">
-                    <div className="bg-[#050505] border border-white/10 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-                        <div className="p-8 border-b border-white/10 bg-white/5 flex justify-between items-end">
+                    <div className="bg-[#050505] border border-white/10 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] relative">
+                        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
+                        <div className="p-6 sm:p-8 border-b border-white/10 bg-white/5 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
                             <div>
-                                <h2 className="text-xl sm:text-2xl font-light tracking-widest uppercase text-white mb-2">Withdraw Funds</h2>
+                                <h2 className="text-xl sm:text-2xl font-light tracking-widest uppercase text-white mb-1">Withdraw Funds</h2>
                                 <p className="text-xs text-neutral-400 uppercase tracking-widest">Transfer to external wallet</p>
                             </div>
-                            <div className="text-right">
-                                <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 mb-1">Available</p>
-                                <p className="text-xl font-bold text-white tracking-wider">${userData.balance.toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                            <div className="text-left sm:text-right">
+                                <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 mb-1">Available (Max 10%)</p>
+                                <p className="text-xl font-bold text-green-400 tracking-wider">${maxAllowed.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                             </div>
                         </div>
                         
-                        <div className="p-8 space-y-6">
+                        <div className="p-6 sm:p-8 space-y-6">
+                            {/* Network Selection */}
                             <div>
-                                <label className="block text-[10px] uppercase tracking-widest text-neutral-500 mb-3">Destination Address (USDT TRC20)</label>
-                                <input type="text" placeholder="Paste TRC20 Address here" className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500/50 transition-colors font-mono" />
+                                <label className="block text-[10px] uppercase tracking-widest text-neutral-500 mb-3">Select Network</label>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                                    {networks.map(net => (
+                                        <button 
+                                            key={net}
+                                            onClick={() => setNetwork(net)}
+                                            className={`py-3 px-2 text-xs font-bold tracking-wider rounded-xl transition-all border ${network === net ? 'bg-blue-500/20 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/10 text-neutral-400 hover:bg-white/10 hover:text-white'}`}
+                                        >
+                                            {net}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Address Input */}
+                            <div>
+                                <label className="block text-[10px] uppercase tracking-widest text-neutral-500 mb-3 flex justify-between items-center">
+                                    <span>Destination Address ({network})</span>
+                                    <button onClick={() => setAddress(userData.walletAddr)} className="text-blue-400 hover:text-blue-300 font-bold px-2 py-1 bg-blue-500/10 rounded transition-colors">USE SAVED</button>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                    placeholder={`Paste ${network} Address here`} 
+                                    className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500/50 transition-colors font-mono" 
+                                />
                             </div>
                             
+                            {/* Amount Input */}
                             <div>
-                                <label className="block text-[10px] uppercase tracking-widest text-neutral-500 mb-3 flex justify-between">
+                                <label className="block text-[10px] uppercase tracking-widest text-neutral-500 mb-3 flex justify-between items-center">
                                     <span>Withdrawal Amount</span>
-                                    <button onClick={() => setAmount(userData.balance.toString())} className="text-blue-400 hover:text-blue-300">MAX</button>
+                                    <button onClick={() => setAmount(maxAllowed.toFixed(2))} className="text-blue-400 hover:text-blue-300 font-bold px-2 py-1 bg-blue-500/10 rounded transition-colors">MAX</button>
                                 </label>
                                 <div className="relative">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 font-bold">$</span>
@@ -394,11 +436,29 @@
                                         value={amount}
                                         onChange={(e) => setAmount(e.target.value)}
                                         placeholder="0.00" 
+                                        max={maxAllowed}
                                         className="w-full bg-black/50 border border-white/10 p-4 pl-8 rounded-xl text-lg text-white font-bold tracking-wider focus:outline-none focus:border-blue-500/50 transition-colors" 
                                     />
                                 </div>
+                                {amount > maxAllowed && (
+                                    <p className="text-[10px] text-red-400 mt-2 tracking-wide">Amount exceeds your maximum allowed limit of ${maxAllowed.toFixed(2)} to maintain base capital.</p>
+                                )}
                             </div>
 
+                            {/* Auto Withdrawal Toggle */}
+                            <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between cursor-pointer" onClick={() => setAutoWithdrawal(!autoWithdrawal)}>
+                                <div>
+                                    <p className="text-xs font-bold text-white tracking-widest uppercase">Auto-Withdrawal Option</p>
+                                    <p className="text-[10px] text-neutral-500 mt-1">Automatically process 10% daily to this address</p>
+                                </div>
+                                <button 
+                                    className={`w-12 h-6 rounded-full transition-colors relative ${autoWithdrawal ? 'bg-blue-500' : 'bg-neutral-600'}`}
+                                >
+                                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${autoWithdrawal ? 'left-7' : 'left-1'}`}></span>
+                                </button>
+                            </div>
+
+                            {/* Fee Summary */}
                             <div className="bg-white/5 border border-white/5 p-4 rounded-xl space-y-3 text-xs tracking-widest uppercase text-neutral-400">
                                 <div className="flex justify-between">
                                     <span>Network Fee (2%)</span>
@@ -410,8 +470,11 @@
                                 </div>
                             </div>
 
-                            <button className="w-full py-4 bg-white text-black text-xs font-bold uppercase tracking-[0.2em] hover:bg-neutral-200 transition-all rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-                                Submit Withdrawal Request
+                            <button 
+                                disabled={!amount || amount <= 0 || amount > maxAllowed || !address}
+                                className="w-full py-4 bg-white text-black text-xs font-bold uppercase tracking-[0.2em] hover:bg-neutral-200 transition-all rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {autoWithdrawal ? 'Save Config & Submit Request' : 'Submit Withdrawal Request'}
                             </button>
                         </div>
                     </div>
